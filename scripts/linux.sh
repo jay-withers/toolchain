@@ -68,3 +68,35 @@ rm /tmp/tflint.zip
 
 verify kubelogin
 verify tflint
+
+echo "==> Configuring shell completions"
+
+_append_if_missing() {
+  local file="$1" marker="$2" content="$3"
+  grep -qF "$marker" "$file" 2>/dev/null && { echo "  already configured: $file"; return; }
+  printf '\n%s\n' "$content" >> "$file"
+  echo "  configured: $file"
+}
+
+# shellcheck disable=SC2016  # variables expand at shell startup, not here
+BASH_COMPLETIONS='# toolchain completions
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+[[ -r "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ]] && source "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
+command -v kubectl &>/dev/null && source <(kubectl completion bash)
+command -v helm &>/dev/null && source <(helm completion bash)'
+
+# shellcheck disable=SC2016  # variables expand at shell startup, not here
+ZSH_COMPLETIONS='# toolchain completions
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+FPATH="${HOMEBREW_PREFIX}/share/zsh/site-functions:${FPATH}"
+autoload -Uz compinit && compinit
+command -v kubectl &>/dev/null && source <(kubectl completion zsh)
+command -v helm &>/dev/null && source <(helm completion zsh)'
+
+touch ~/.bashrc
+_append_if_missing ~/.bashrc "# toolchain completions" "$BASH_COMPLETIONS"
+
+if installed zsh; then
+  touch ~/.zshrc
+  _append_if_missing ~/.zshrc "# toolchain completions" "$ZSH_COMPLETIONS"
+fi
