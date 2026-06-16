@@ -1,0 +1,29 @@
+# Base
+brew "git"
+brew "curl"
+brew "wget"
+brew "jq"
+brew "yq"
+brew "unzip"
+
+# Azure
+brew "azure-cli"
+
+# Kubernetes
+brew "kubectl"
+brew "helm"
+brew "k9s"
+brew "kubectx"
+
+# Terraform
+brew "tfenv"
+brew "terraform-docs"
+brew "checkov"
+
+# Dev tools
+brew "pre-commit"
+brew "gitleaks"
+brew "actionlint"
+brew "shellcheck"
+brew "node"
+brew "commitlint"
