@@ -3,6 +3,9 @@ name: test-install
 on:
   pull_request:
     branches: [main]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/test-install.yml"
 
 jobs:
   linux:
