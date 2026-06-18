@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo does
 
-Bootstrap scripts for provisioning a fresh WSL (Ubuntu 24.04) or macOS machine with Azure/Kubernetes tooling. `scripts/setup.sh` detects the OS and delegates to `scripts/linux.sh` or `scripts/macos.sh`. All Homebrew packages shared between platforms live in `Brewfile`; macOS-only packages are in `Brewfile.macos`. On Linux, `kubelogin` and `tflint` are installed via direct binary download (not Homebrew).
+Bootstrap scripts for provisioning a fresh WSL (Ubuntu 24.04) or macOS machine with Azure/Kubernetes tooling. `src/setup.sh` detects the OS and delegates to `src/linux.sh` or `src/macos.sh`. All Homebrew packages shared between platforms live in `src/Brewfile`; macOS-only packages are in `src/Brewfile.macos`. On Linux, `kubelogin` and `tflint` are installed via direct binary download (not Homebrew).
 
 ## Commands
 
