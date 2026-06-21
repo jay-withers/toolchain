@@ -3,6 +3,7 @@
   "extends": ["config:recommended"],
   "automerge": true,
   "automergeType": "pr",
+  "platformAutomerge": true,
   "pre-commit": {
     "fileMatch": ["(^|/)config/\\.pre-commit-config\\.yaml$"]
   },
