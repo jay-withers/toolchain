@@ -35,7 +35,7 @@ jobs:
         run: pip install pre-commit==3.8.0
 
       - name: Cache pre-commit envs
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('config/.pre-commit-config.yaml') }}
