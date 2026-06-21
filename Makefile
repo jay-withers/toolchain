@@ -10,4 +10,4 @@ lint:
 	pre-commit run --all-files --config $(CONFIG)
 
 test:
-	bash scripts/test.sh
+	bash tests/test.sh

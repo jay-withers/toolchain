@@ -31,7 +31,7 @@ fi
 verify brew
 
 echo "==> Installing packages from Brewfile"
-brew bundle --file="$REPO_DIR/config/Brewfile"
+brew bundle --file="$REPO_DIR/src/Brewfile"
 
 echo "==> Verifying Brewfile tools"
 for tool in git curl wget jq yq az kubectx tfenv terraform-docs checkov pre-commit gitleaks actionlint shellcheck node commitlint; do
@@ -43,8 +43,13 @@ verify k9s version
 
 echo "==> Installing macOS-specific packages"
 brew trust azure/kubelogin
-brew bundle --file="$REPO_DIR/config/Brewfile.macos"
+brew bundle --file="$REPO_DIR/src/Brewfile.macos"
 verify kubelogin
+verify pwsh
+
+echo "==> Installing Azure PowerShell module"
+pwsh -Command "Install-Module -Name Az -Scope CurrentUser -Force -AllowClobber"
+pwsh -Command "Import-Module Az.Accounts; Write-Host \"  ok: Az \$(Get-Module Az.Accounts -ListAvailable | Select-Object -First 1 -ExpandProperty Version)\""
 
 ARCH=$(uname -m)
 case "$ARCH" in
