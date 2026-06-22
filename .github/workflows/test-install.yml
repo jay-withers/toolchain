@@ -46,18 +46,3 @@ jobs:
 
       - name: Run setup
         run: bash src/setup.sh
-
-  result:
-    needs: [linux, macos]
-    if: always()
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check results
-        run: |
-          linux="${{ needs.linux.result }}"
-          macos="${{ needs.macos.result }}"
-          if [[ ($linux == "success" || $linux == "skipped") && ($macos == "success" || $macos == "skipped") ]]; then
-            exit 0
-          else
-            exit 1
-          fi
