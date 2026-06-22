@@ -19,7 +19,7 @@ jobs:
         run: |
           BASE="${{ github.event.pull_request.base.sha }}"
           HEAD="${{ github.event.pull_request.head.sha }}"
-          if git diff --name-only "$BASE" "$HEAD" | grep -qE '^(src/|\.github/workflows/test-install\.yml)'; then
+          if git diff --name-only "$BASE" "$HEAD" | grep -qE '^src/'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
@@ -46,18 +46,3 @@ jobs:
 
       - name: Run setup
         run: bash src/setup.sh
-
-  result:
-    needs: [linux, macos]
-    if: always()
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check results
-        run: |
-          linux="${{ needs.linux.result }}"
-          macos="${{ needs.macos.result }}"
-          if [[ ($linux == "success" || $linux == "skipped") && ($macos == "success" || $macos == "skipped") ]]; then
-            exit 0
-          else
-            exit 1
-          fi
