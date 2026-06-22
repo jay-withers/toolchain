@@ -19,7 +19,7 @@ jobs:
         run: |
           BASE="${{ github.event.pull_request.base.sha }}"
           HEAD="${{ github.event.pull_request.head.sha }}"
-          if git diff --name-only "$BASE" "$HEAD" | grep -qE '^(src/|\.github/workflows/test-install\.yml)'; then
+          if git diff --name-only "$BASE" "$HEAD" | grep -qE '^src/'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
