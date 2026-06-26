@@ -1,11 +1,11 @@
-# wsl
+# toolchain
 
 Bootstrap a fresh WSL or macOS machine for Azure cloud infrastructure and Kubernetes work.
 
 ## Usage
 
 ```bash
-git clone https://github.com/jay-withers/wsl && cd wsl && bash src/setup.sh
+git clone https://github.com/jay-withers/toolchain && cd toolchain && bash src/setup.sh
 ```
 
 ## What gets installed
@@ -19,6 +19,8 @@ git clone https://github.com/jay-withers/wsl && cd wsl && bash src/setup.sh
 | Terraform | tfenv, terraform-docs, checkov | Homebrew | Homebrew |
 | Terraform | tflint | Direct download | Direct download |
 | Dev tools | pre-commit, gitleaks, actionlint, shellcheck, node, commitlint | Homebrew | Homebrew |
+| Shell | PowerShell | apt | Homebrew cask |
+| Shell | Az PowerShell module | pwsh | pwsh |
 
 ## Development
 
@@ -48,7 +50,7 @@ src/
   linux.sh        # apt prerequisites, Homebrew, direct binary installs
   macos.sh        # Homebrew, macOS-specific packages
   Brewfile        # packages installed on both platforms
-  Brewfile.macos  # packages installed on macOS only (kubelogin)
+  Brewfile.macos  # packages installed on macOS only (kubelogin, powershell)
 tests/
   test.sh         # runs setup in an Ubuntu 24.04 Docker container
 config/
