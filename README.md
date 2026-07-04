@@ -53,14 +53,13 @@ src/
   Brewfile.macos  # packages installed on macOS only (kubelogin, powershell)
 tests/
   test.sh         # runs setup in an Ubuntu 24.04 Docker container
-config/
-  .pre-commit-config.yaml
-  commitlint.config.js
 .github/
   workflows/
     pre-commit.yml   # lints all files on PRs to main
     test-install.yml # runs setup.sh on ubuntu-24.04 and macos-15
     tag.yml          # auto-tags on merge to main (semver patch bump)
-renovate.json        # automated dependency updates
+renovate.json           # automated dependency updates
+.pre-commit-config.yaml # pre-commit hook definitions
+commitlint.config.js    # Conventional Commits config
 Makefile
 ```
