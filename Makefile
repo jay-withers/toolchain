@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := help
+
 .PHONY: help install lint test
 
 help:
