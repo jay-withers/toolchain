@@ -20,7 +20,7 @@ Commits must follow [Conventional Commits](https://www.conventionalcommits.org/)
 
 ## Pre-commit config
 
-Hooks are in `config/.pre-commit-config.yaml` (not the repo root). Pass `--config config/.pre-commit-config.yaml` to any `pre-commit` command run manually. The `no-commit-to-branch` hook blocks direct commits to `main`.
+Hooks are in `.pre-commit-config.yaml` at the repo root (pre-commit's default location, so no `--config` flag is needed). The `no-commit-to-branch` hook blocks direct commits to `main`.
 
 ## CI
 
