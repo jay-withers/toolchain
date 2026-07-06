@@ -3,7 +3,7 @@
 .PHONY: help install lint test protect-branch
 
 BRANCH ?= main
-CHECKS ?= pre-commit
+CHECKS ?= pre-commit / Pre-commit
 
 help:
 	@echo "Available targets:"
