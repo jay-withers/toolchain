@@ -53,6 +53,8 @@ src/
   Brewfile.macos  # packages installed on macOS only (kubelogin, powershell)
 tests/
   test.sh         # runs setup in an Ubuntu 24.04 Docker container
+scripts/
+  protect-branch.sh # one-time GitHub setup: auto-merge + branch ruleset (gh CLI)
 .github/
   workflows/
     pre-commit.yml   # lints all files on PRs to main
