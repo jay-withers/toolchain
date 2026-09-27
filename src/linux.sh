@@ -3,6 +3,9 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# shellcheck source=src/checksum.sh
+source "$REPO_DIR/src/checksum.sh"
+
 installed() { command -v "$1" &>/dev/null; }
 
 SUDO=""
@@ -67,14 +70,22 @@ case "$ARCH" in
   *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
-curl -fsSL "https://github.com/Azure/kubelogin/releases/latest/download/kubelogin-linux-${KUBE_ARCH}.zip" \
+KUBELOGIN_ZIP="kubelogin-linux-${KUBE_ARCH}.zip"
+curl -fsSL "https://github.com/Azure/kubelogin/releases/latest/download/${KUBELOGIN_ZIP}" \
   -o /tmp/kubelogin.zip
+verify_checksum /tmp/kubelogin.zip \
+  "https://github.com/Azure/kubelogin/releases/latest/download/${KUBELOGIN_ZIP}.sha256" \
+  "$KUBELOGIN_ZIP"
 $SUDO unzip -j /tmp/kubelogin.zip "bin/linux_${KUBE_ARCH}/kubelogin" -d /usr/local/bin
 $SUDO chmod +x /usr/local/bin/kubelogin
 rm /tmp/kubelogin.zip
 
-curl -fsSL "https://github.com/terraform-linters/tflint/releases/latest/download/tflint_linux_${KUBE_ARCH}.zip" \
+TFLINT_ZIP="tflint_linux_${KUBE_ARCH}.zip"
+curl -fsSL "https://github.com/terraform-linters/tflint/releases/latest/download/${TFLINT_ZIP}" \
   -o /tmp/tflint.zip
+verify_checksum /tmp/tflint.zip \
+  "https://github.com/terraform-linters/tflint/releases/latest/download/checksums.txt" \
+  "$TFLINT_ZIP"
 $SUDO unzip -j /tmp/tflint.zip tflint -d /usr/local/bin
 $SUDO chmod +x /usr/local/bin/tflint
 rm /tmp/tflint.zip
