@@ -55,9 +55,10 @@ tests/
   test.sh         # runs setup in an Ubuntu 24.04 Docker container
 .github/
   workflows/
-    pre-commit.yml   # lints all files on PRs to main
-    test-install.yml # runs setup.sh on ubuntu-24.04 and macos-15
-    tag.yml          # auto-tags on merge to main (semver patch bump)
+    ci-pre-commit.yml   # lints all files on PRs to main
+    ci-test-install.yml # runs setup.sh on ubuntu-24.04 and macos-15
+    ci-codeql.yml       # CodeQL over the workflows
+    cd-tag.yml          # auto-tags on merge to main (semver patch bump)
 renovate.json           # automated dependency updates
 .pre-commit-config.yaml # pre-commit hook definitions
 commitlint.config.js    # Conventional Commits config

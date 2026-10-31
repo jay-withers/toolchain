@@ -24,6 +24,6 @@ Hooks are in `.pre-commit-config.yaml` at the repo root (pre-commit's default lo
 
 ## CI
 
-- **pre-commit**: runs all linters on PRs to `main`
-- **test-install**: runs `setup.sh` on both `ubuntu-24.04` and `macos-15` on PRs to `main` (only when `src/` files change)
-- **tag**: auto-creates a semver tag on every merge to `main` (default bump: patch)
+- **ci-pre-commit**: runs all linters on PRs to `main`
+- **ci-test-install**: runs `setup.sh` on both `ubuntu-24.04` and `macos-15` on PRs to `main` (only when `src/` files change)
+- **cd-tag**: auto-creates a semver tag on every merge to `main` (default bump: patch)
