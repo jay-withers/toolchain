@@ -37,6 +37,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Run setup
+        env:
+          # mise resolves versions through the GitHub API; anonymous calls
+          # run out at 60 an hour on shared runner IPs.
+          GITHUB_TOKEN: ${{ github.token }}
         run: bash src/setup.sh
 
   macos:
@@ -48,4 +52,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Run setup
+        env:
+          # mise resolves versions through the GitHub API; anonymous calls
+          # run out at 60 an hour on shared runner IPs.
+          GITHUB_TOKEN: ${{ github.token }}
         run: bash src/setup.sh

@@ -1,4 +1,0 @@
-tap "azure/kubelogin"
-brew "azure/kubelogin/kubelogin"
-
-cask "powershell@preview"

@@ -1,126 +1,52 @@
 #!/usr/bin/env bash
+# Linux (WSL Ubuntu 24.04): the few things mise does not manage, from apt,
+# then mise itself. Every other tool comes from src/mise/config.toml via
+# common.sh.
 set -euo pipefail
-
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
-# shellcheck source=src/checksum.sh
-source "$REPO_DIR/src/checksum.sh"
-
-installed() { command -v "$1" &>/dev/null; }
 
 SUDO=""
 [[ "$(id -u)" != "0" ]] && SUDO="sudo"
 
-verify() {
-  local bin=$1; shift
-  local args=("$@")
-  [[ ${#args[@]} -eq 0 ]] && args=("--version")
-  if command -v "$bin" &>/dev/null; then
-    echo "  ok: $bin $("$bin" "${args[@]}" 2>&1 | head -1)"
-  else
-    echo "  FAIL: $bin not found"
-    exit 1
-  fi
-}
+# Signing keys are checked before apt trusts them, so a swapped key fails here
+# rather than silently trusting whatever the URL served.
+# (Named without "KEY": gitleaks reads any *KEY* assignment as a secret.)
+MISE_SIGNER_FPR="24853EC9F655CE80B48E6C3A8B81C9D17413A06D"
+# Same digest as dev-containers' PGDG_SIGNING_ASC_URL.
+PGDG_ASC_SHA256="0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76"
+# psql major. Newer than Ubuntu's 16 because the servers it talks to are (Azure
+# Flexible Server 17, a local container 18); an older client mis-renders \d.
+PGDG_CLIENT_MAJOR="18"
 
 echo "==> Installing apt prerequisites"
 $SUDO apt-get update -qq
-$SUDO apt-get install -y -qq build-essential curl git file ca-certificates unzip
-verify gcc
-verify curl
-verify git
+# bubblewrap and socat are what Claude Code's sandbox needs on Linux/WSL2;
+# build-essential is for the occasional tool or Python wheel that compiles.
+$SUDO apt-get install -y -qq build-essential ca-certificates curl git gpg unzip bubblewrap socat
+$SUDO install -dm 755 /etc/apt/keyrings
+CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")"
+ARCH="$(dpkg --print-architecture)"
 
-if ! installed brew; then
-  echo "==> Installing Homebrew"
-  NONINTERACTIVE=1 /bin/bash -c \
-    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+echo "==> Adding the mise apt repository"
+tmp="$(mktemp -d)"
+curl -fsSL https://mise.jdx.dev/gpg-key.pub -o "$tmp/mise.pub"
+if ! gpg --show-keys --with-colons "$tmp/mise.pub" 2>/dev/null | grep -q "^fpr:*:${MISE_SIGNER_FPR}:"; then
+  echo "  FAIL: mise signing key fingerprint is not ${MISE_SIGNER_FPR}"
+  exit 1
 fi
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-verify brew
+gpg --dearmor < "$tmp/mise.pub" | $SUDO tee /etc/apt/keyrings/mise-archive-keyring.gpg >/dev/null
+echo "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=${ARCH}] https://mise.jdx.dev/deb stable main" |
+  $SUDO tee /etc/apt/sources.list.d/mise.list >/dev/null
 
-echo "==> Installing packages from Brewfile"
-brew bundle --file="$REPO_DIR/src/Brewfile"
+echo "==> Adding the PostgreSQL apt repository (psql ${PGDG_CLIENT_MAJOR})"
+curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o "$tmp/pgdg.asc"
+if [[ "$(sha256sum "$tmp/pgdg.asc" | awk '{print $1}')" != "$PGDG_ASC_SHA256" ]]; then
+  echo "  FAIL: PostgreSQL signing key digest changed"
+  exit 1
+fi
+gpg --dearmor < "$tmp/pgdg.asc" | $SUDO tee /etc/apt/keyrings/pgdg.gpg >/dev/null
+echo "deb [signed-by=/etc/apt/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt ${CODENAME}-pgdg main" |
+  $SUDO tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+rm -rf "$tmp"
 
-echo "==> Verifying Brewfile tools"
-for tool in git curl wget jq yq az kubectx tfenv terraform-docs checkov pre-commit gitleaks actionlint shellcheck node commitlint; do
-  verify "$tool"
-done
-verify kubectl version --client
-verify helm version
-verify k9s version
-
-echo "==> Installing PowerShell"
-curl -fsSL https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb \
-  -o /tmp/packages-microsoft-prod.deb
-$SUDO dpkg -i /tmp/packages-microsoft-prod.deb
-rm /tmp/packages-microsoft-prod.deb
 $SUDO apt-get update -qq
-$SUDO apt-get install -y -qq powershell
-verify pwsh
-
-echo "==> Installing Azure PowerShell module"
-pwsh -Command "Install-Module -Name Az -Scope CurrentUser -Force -AllowClobber"
-pwsh -Command "Import-Module Az.Accounts; Write-Host \"  ok: Az \$(Get-Module Az.Accounts -ListAvailable | Select-Object -First 1 -ExpandProperty Version)\""
-
-echo "==> Installing kubelogin and tflint"
-ARCH=$(uname -m)
-case "$ARCH" in
-  x86_64)        KUBE_ARCH="amd64" ;;
-  aarch64|arm64) KUBE_ARCH="arm64" ;;
-  *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
-esac
-
-KUBELOGIN_ZIP="kubelogin-linux-${KUBE_ARCH}.zip"
-curl -fsSL "https://github.com/Azure/kubelogin/releases/latest/download/${KUBELOGIN_ZIP}" \
-  -o /tmp/kubelogin.zip
-verify_checksum /tmp/kubelogin.zip \
-  "https://github.com/Azure/kubelogin/releases/latest/download/${KUBELOGIN_ZIP}.sha256" \
-  "$KUBELOGIN_ZIP"
-$SUDO unzip -j /tmp/kubelogin.zip "bin/linux_${KUBE_ARCH}/kubelogin" -d /usr/local/bin
-$SUDO chmod +x /usr/local/bin/kubelogin
-rm /tmp/kubelogin.zip
-
-TFLINT_ZIP="tflint_linux_${KUBE_ARCH}.zip"
-curl -fsSL "https://github.com/terraform-linters/tflint/releases/latest/download/${TFLINT_ZIP}" \
-  -o /tmp/tflint.zip
-verify_checksum /tmp/tflint.zip \
-  "https://github.com/terraform-linters/tflint/releases/latest/download/checksums.txt" \
-  "$TFLINT_ZIP"
-$SUDO unzip -j /tmp/tflint.zip tflint -d /usr/local/bin
-$SUDO chmod +x /usr/local/bin/tflint
-rm /tmp/tflint.zip
-
-verify kubelogin
-verify tflint
-
-echo "==> Configuring shell completions"
-
-_append_if_missing() {
-  local file="$1" marker="$2" content="$3"
-  grep -qF "$marker" "$file" 2>/dev/null && { echo "  already configured: $file"; return; }
-  printf '\n%s\n' "$content" >> "$file"
-  echo "  configured: $file"
-}
-
-# shellcheck disable=SC2016  # variables expand at shell startup, not here
-BASH_COMPLETIONS='# toolchain completions
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-[[ -r "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ]] && source "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
-command -v kubectl &>/dev/null && source <(kubectl completion bash)
-command -v helm &>/dev/null && source <(helm completion bash)'
-
-# shellcheck disable=SC2016  # variables expand at shell startup, not here
-ZSH_COMPLETIONS='# toolchain completions
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-FPATH="${HOMEBREW_PREFIX}/share/zsh/site-functions:${FPATH}"
-autoload -Uz compinit && compinit
-command -v kubectl &>/dev/null && source <(kubectl completion zsh)
-command -v helm &>/dev/null && source <(helm completion zsh)'
-
-touch ~/.bashrc
-_append_if_missing ~/.bashrc "# toolchain completions" "$BASH_COMPLETIONS"
-
-if installed zsh; then
-  touch ~/.zshrc
-  _append_if_missing ~/.zshrc "# toolchain completions" "$ZSH_COMPLETIONS"
-fi
+$SUDO apt-get install -y -qq mise "postgresql-client-${PGDG_CLIENT_MAJOR}"

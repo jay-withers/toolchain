@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "WSL tooling setup — Azure / Kubernetes"
-echo "======================================="
+echo "Toolchain setup — mise, Azure, Terraform, Kubernetes"
+echo "===================================================="
 
 # shellcheck disable=SC1091
 case "$(uname)" in
@@ -13,5 +13,9 @@ case "$(uname)" in
   *)      echo "Unsupported OS: $(uname)"; exit 1 ;;
 esac
 
+# shellcheck source=src/common.sh
+source "$SCRIPT_DIR/common.sh"
+
 echo ""
-echo "Setup complete. Restart your shell to ensure all tools are in PATH."
+echo "Setup complete. Open a new shell (or run: source ~/.bashrc) to pick up mise."
+echo "Then, in each repo: mise trust && mise install"
