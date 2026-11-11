@@ -1,29 +1,4 @@
-# Base
-brew "git"
-brew "curl"
-brew "wget"
-brew "jq"
-brew "yq"
-brew "unzip"
-
-# Azure
-brew "azure-cli"
-
-# Kubernetes
-brew "kubectl"
-brew "helm"
-brew "k9s"
-brew "kubectx"
-
-# Terraform
-brew "tfenv"
-brew "terraform-docs"
-brew "checkov"
-
-# Dev tools
-brew "pre-commit"
-brew "gitleaks"
-brew "actionlint"
-brew "shellcheck"
-brew "node"
-brew "commitlint"
+# macOS only. Linux gets the same from apt (src/linux.sh). Everything else
+# comes from mise (src/mise/config.toml).
+brew "mise"
+brew "libpq" # psql

@@ -17,7 +17,14 @@ echo "Running setup.sh in Ubuntu 24.04 container..."
 echo "Repo mounted at /wsl"
 echo ""
 
-docker run --rm -it \
+# -it only from a terminal, so the test also runs from scripts and CI.
+tty_args=()
+[[ -t 0 ]] && tty_args=(-it)
+
+# mise resolves versions through the GitHub API, which allows 60 anonymous
+# requests an hour; pass a token through when there is one.
+docker run --rm "${tty_args[@]}" \
+  --env GITHUB_TOKEN \
   --volume "${REPO_ROOT}:/wsl" \
   ubuntu:24.04 \
   bash -c "cd /wsl && bash src/setup.sh"
