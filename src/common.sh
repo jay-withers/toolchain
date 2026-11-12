@@ -43,6 +43,22 @@ verify kubectl version --client
 verify helm version
 verify k9s version
 
+echo "==> Pinning pre-commit's Node"
+# pre-commit ignores executables under a shims directory, so it never finds
+# mise's node and builds each Node hook (commitlint) with nodeenv instead.
+# Unpinned, nodeenv takes the newest Node build, and a prerelease tag
+# ("27.0.0-alpha") crashes its version parser, failing every commit. Pin it to
+# the node mise installed. Rewritten on each run to follow Renovate's bumps,
+# but only while the file is ours.
+NODEENVRC="$HOME/.nodeenvrc"
+if [[ ! -e "$NODEENVRC" ]] || grep -qF "# toolchain: nodeenv" "$NODEENVRC"; then
+  printf '# toolchain: nodeenv (written by toolchain/src/common.sh)\n[nodeenv]\nnode = %s\n' \
+    "$(node -v | sed 's/^v//')" > "$NODEENVRC"
+  echo "  $NODEENVRC -> node $(node -v)"
+else
+  echo "  WARN: $NODEENVRC exists and is not toolchain's; left alone. Pin [nodeenv] node there yourself."
+fi
+
 echo "==> Installing Azure PowerShell module"
 pwsh -NoProfile -Command "Install-Module -Name Az -Scope CurrentUser -Force -AllowClobber"
 pwsh -NoProfile -Command "Import-Module Az.Accounts; Write-Host \"  ok: Az \$(Get-Module Az.Accounts -ListAvailable | Select-Object -First 1 -ExpandProperty Version)\""
