@@ -11,6 +11,7 @@ Bootstrap scripts for a fresh WSL (Ubuntu 24.04) or macOS machine, built on [mis
 - **`kubelogin` must stay `aqua:Azure/kubelogin`.** mise's registry maps the bare name to int128/kubelogin, a different tool.
 - **Shims, not `mise activate`,** so non-interactive shells (Claude Code, make, VS Code tasks) resolve per-repo versions. Keep it that way.
 - Signing keys for the apt repos are checked against a pinned fingerprint or digest before apt trusts them.
+- **`common.sh` writes `~/.nodeenvrc`** pinning nodeenv to mise's node. pre-commit skips shims when looking for `node`, so its Node hooks (commitlint) go through nodeenv, whose unpinned "latest" can be a prerelease its version parser crashes on. Don't drop it unless pre-commit learns to use mise's node.
 - Docker is deliberately not installed (Docker Desktop's WSL integration provides it); `common.sh` only warns.
 
 ## Commands
