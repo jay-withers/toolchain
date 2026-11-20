@@ -55,6 +55,12 @@ _toolchain_az="$(_toolchain_dir pypi-azure-cli)"
 _toolchain_az="$(readlink -f "${_toolchain_az:-/nonexistent}/az" 2>/dev/null)"
 _toolchain_az_complete="${_toolchain_az%/*}/register-python-argcomplete"
 
+# compinit normally ran in the "# toolchain: mise" block; if it did not, or
+# stopped at compaudit's "insecure directories" question (group-writable
+# site-functions, as on CI runners), compdef is missing and every completion
+# below would fail. -i skips those directories instead of asking.
+(( ${+functions[compdef]} )) || { autoload -Uz compinit && compinit -i; }
+
 # Completions kubectl and helm lack in the "# toolchain: mise" block. mise's
 # needs `usage`, which the global mise config installs, and is quick enough to
 # run each time.

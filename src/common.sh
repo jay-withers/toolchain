@@ -92,7 +92,7 @@ command -v kubectl &>/dev/null && source <(kubectl completion bash)
 command -v helm &>/dev/null && source <(helm completion bash)"
 ZSH_PROFILE_BLOCK="${PROFILE_BLOCK//activate bash/activate zsh}"
 ZSHRC_BLOCK="${ZSH_PROFILE_BLOCK}
-autoload -Uz compinit && compinit
+autoload -Uz compinit && compinit -i
 command -v kubectl &>/dev/null && source <(kubectl completion zsh)
 command -v helm &>/dev/null && source <(helm completion zsh)"
 
@@ -156,7 +156,7 @@ echo "==> Making zsh the login shell"
 # apt was. TOOLCHAIN_LOGIN_SHELL=keep leaves your login shell alone.
 # The system zsh (apt's /usr/bin/zsh), not whichever zsh PATH finds first.
 ZSH_PATH="$(grep -m1 -xE '/(usr/)?bin/zsh' /etc/shells 2>/dev/null || command -v zsh || true)"
-LOGIN_SHELL="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)"
+LOGIN_SHELL="$( (getent passwd "$(id -un)" 2>/dev/null || true) | cut -d: -f7)"
 if [[ "$(uname)" == "Darwin" ]]; then
   echo "  macOS: zsh is the default; left as is"
 elif [[ "${TOOLCHAIN_LOGIN_SHELL:-}" == "keep" ]]; then

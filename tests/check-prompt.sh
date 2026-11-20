@@ -19,8 +19,11 @@ echo "==> Checking the interactive shells"
 
 check_rc "$HOME/.zshrc"
 # shellcheck disable=SC2016  # evaluated by zsh
-out="$(zsh -ic 'print -r -- "CHECK starship=${STARSHIP_SHELL:-} suggest=${ZSH_AUTOSUGGEST_STRATEGY:+y} highlight=${ZSH_HIGHLIGHT_VERSION:+y} atuin=${ATUIN_SESSION:+y} zoxide=${+functions[__zoxide_z]} gh=${+_comps[gh]} mise=${+_comps[mise]} az=${+_comps[az]} shims=$( { typeset -f; whence -p atuin zoxide starship; } | grep -c /shims/)"' \
-  </dev/null 2>&1 | grep -ao 'CHECK .*' | tail -1 || true)"
+raw="$(zsh -ic 'print -r -- "CHECK starship=${STARSHIP_SHELL:-} suggest=${ZSH_AUTOSUGGEST_STRATEGY:+y} highlight=${ZSH_HIGHLIGHT_VERSION:+y} atuin=${ATUIN_SESSION:+y} zoxide=${+functions[__zoxide_z]} gh=${+_comps[gh]} mise=${+_comps[mise]} az=${+_comps[az]} shims=$( { typeset -f; whence -p atuin zoxide starship; } | grep -c /shims/)"' \
+  </dev/null 2>&1 || true)"
+out="$(grep -ao 'CHECK .*' <<<"$raw" | tail -1 || true)"
+[[ "$out" == "CHECK starship=zsh suggest=y highlight=y atuin=y zoxide=1 gh=1 mise=1 az=1 shims=0" ]] ||
+  { echo "  zsh output (last 40 lines):"; tail -40 <<<"$raw"; }
 [[ "$out" == "CHECK starship=zsh suggest=y highlight=y atuin=y zoxide=1 gh=1 mise=1 az=1 shims=0" ]] ||
   fail "zsh is missing part of its setup: ${out:-no output}"
 echo "  ok: zsh (starship, autosuggestions, syntax highlighting, atuin, zoxide, completions)"
