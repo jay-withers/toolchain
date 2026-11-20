@@ -22,7 +22,7 @@ jobs:
         run: |
           BASE="${{ github.event.pull_request.base.sha }}"
           HEAD="${{ github.event.pull_request.head.sha }}"
-          if git diff --name-only "$BASE" "$HEAD" | grep -qE '^src/'; then
+          if git diff --name-only "$BASE" "$HEAD" | grep -qE '^(src|tests)/'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
@@ -43,6 +43,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: bash src/setup.sh
 
+      - name: Check the interactive prompt
+        run: bash tests/check-prompt.sh
+
   macos:
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
@@ -57,3 +60,6 @@ jobs:
           # run out at 60 an hour on shared runner IPs.
           GITHUB_TOKEN: ${{ github.token }}
         run: bash src/setup.sh
+
+      - name: Check the interactive prompt
+        run: bash tests/check-prompt.sh

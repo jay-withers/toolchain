@@ -43,6 +43,10 @@ gitleaks = "8.30.1"
 jq = "1.8.2"
 yq = "4.54.3"
 
+# Interactive shells: the prompt (directory, git branch and status), wired
+# into ~/.bashrc and ~/.zshrc by common.sh
+starship = "1.27.0"
+
 [settings]
 # Read .terraform-version too, so repos that have not yet moved to mise.toml
 # still get the Terraform they pin. Drop once every repo has mise.toml.

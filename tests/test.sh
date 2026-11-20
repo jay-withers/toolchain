@@ -27,4 +27,4 @@ docker run --rm "${tty_args[@]}" \
   --env GITHUB_TOKEN \
   --volume "${REPO_ROOT}:/wsl" \
   ubuntu:24.04 \
-  bash -c "cd /wsl && bash src/setup.sh"
+  bash -c "cd /wsl && bash src/setup.sh && bash tests/check-prompt.sh"
