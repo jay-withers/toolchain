@@ -34,7 +34,7 @@ eval "$(mise activate bash --shims)"
 
 echo "==> Verifying tools"
 for tool in az gh terraform tflint terraform-docs checkov python uv node pre-commit \
-    shellcheck actionlint gitleaks jq yq kubectx psql; do
+    shellcheck actionlint gitleaks jq yq kubectx psql starship; do
   verify "$tool"
 done
 verify kubelogin --version
@@ -68,9 +68,13 @@ echo "==> Configuring shells"
 _append_if_missing() {
   local file="$1" marker="$2" content="$3"
   touch "$file"
-  grep -qF "$marker" "$file" 2>/dev/null && { echo "  already configured: $file"; return; }
+  grep -qF "$marker" "$file" 2>/dev/null && { echo "  already configured: $file ($marker)"; return; }
   printf '\n%s\n' "$content" >> "$file"
-  echo "  configured: $file"
+  echo "  configured: $file ($marker)"
+  if [[ "$marker" == "# toolchain: prompt" ]]; then
+    echo "    This replaces any prompt or theme set earlier in $file. To keep yours, delete"
+    echo "    the lines under '# toolchain: prompt' but keep that comment, so re-runs leave it out."
+  fi
 }
 
 # Shims rather than `mise activate`: a shim picks the version the current
@@ -96,11 +100,32 @@ autoload -Uz compinit && compinit
 command -v kubectl &>/dev/null && source <(kubectl completion zsh)
 command -v helm &>/dev/null && source <(helm completion zsh)"
 
+# The interactive prompt, a separate block so machines set up before it still
+# get it. It brings back what the dev container's shell had: the git branch in
+# the prompt (now from starship, in both shells) and the rest of the line
+# suggested as you type (ble.sh in bash on Linux, zsh-autosuggestions in zsh
+# on macOS). Each line is a no-op where its tool is missing.
+# ble.sh goes last: it takes over line editing once the rest of the rc ran.
+# shellcheck disable=SC2016  # expands at shell startup, not here
+BASHRC_PROMPT_BLOCK='# toolchain: prompt
+command -v starship &>/dev/null && eval "$(starship init bash)"
+[[ $- == *i* && -f "${XDG_DATA_HOME:-$HOME/.local/share}/toolchain/blesh/ble.sh" ]] && source "${XDG_DATA_HOME:-$HOME/.local/share}/toolchain/blesh/ble.sh"'
+# shellcheck disable=SC2016  # expands at shell startup, not here
+ZSHRC_PROMPT_BLOCK='# toolchain: prompt
+command -v starship &>/dev/null && eval "$(starship init zsh)"'
+if [[ "$(uname)" == "Darwin" ]]; then
+  ZSH_AUTOSUGGEST="$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  ZSHRC_PROMPT_BLOCK="${ZSHRC_PROMPT_BLOCK}
+[[ -f \"$ZSH_AUTOSUGGEST\" ]] && source \"$ZSH_AUTOSUGGEST\""
+fi
+
 _append_if_missing ~/.profile "# toolchain: mise" "$PROFILE_BLOCK"
 _append_if_missing ~/.bashrc "# toolchain: mise" "$BASHRC_BLOCK"
+_append_if_missing ~/.bashrc "# toolchain: prompt" "$BASHRC_PROMPT_BLOCK"
 if [[ "$(uname)" == "Darwin" ]] || command -v zsh &>/dev/null; then
   _append_if_missing ~/.zprofile "# toolchain: mise" "$ZSH_PROFILE_BLOCK"
   _append_if_missing ~/.zshrc "# toolchain: mise" "$ZSHRC_BLOCK"
+  _append_if_missing ~/.zshrc "# toolchain: prompt" "$ZSHRC_PROMPT_BLOCK"
 fi
 
 echo "==> Checking Docker"

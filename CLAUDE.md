@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo does
 
-Bootstrap scripts for a fresh WSL (Ubuntu 24.04) or macOS machine, built on [mise](https://mise.jdx.dev). It replaces the dev-container images for local work: the jay-withers repos are moving off dev containers, so this is how a machine gets its tools. `src/setup.sh` runs `src/linux.sh` (apt: mise, psql, bubblewrap/socat for Claude Code's sandbox) or `src/macos.sh` (Homebrew: mise, libpq), then `src/common.sh`. That script symlinks `src/mise/config.toml` into `~/.config/mise/conf.d/`, runs `mise install`, puts mise shims on PATH in the shell rc files, and verifies every tool.
+Bootstrap scripts for a fresh WSL (Ubuntu 24.04) or macOS machine, built on [mise](https://mise.jdx.dev). It replaces the dev-container images for local work: the jay-withers repos are moving off dev containers, so this is how a machine gets its tools. `src/setup.sh` runs `src/linux.sh` (apt: mise, psql, bubblewrap/socat for Claude Code's sandbox, libicu for pwsh; plus ble.sh from a pinned tarball) or `src/macos.sh` (Homebrew: mise, libpq, zsh-autosuggestions), then `src/common.sh`. That script symlinks `src/mise/config.toml` into `~/.config/mise/conf.d/`, runs `mise install`, puts mise shims on PATH and the prompt block (starship, autosuggestions) in the shell rc files, and verifies every tool.
 
 - **Tools belong in `src/mise/config.toml`**, not in apt or the Brewfile. Use apt or Homebrew only for what mise can't manage (mise itself, psql, OS packages). Renovate's mise manager bumps the versions.
 - **Global versus per repo:** the global config holds what every repo assumes. A tool whose version a repo's build or lint depends on also belongs in that repo's `mise.toml`, because that's what CI installs.
+- **The `# toolchain: prompt` block is separate from `# toolchain: mise`** so machines set up before it still get it on a re-run. ble.sh has no checksum file or Renovate manager: its release URL and digest in `src/linux.sh` are bumped by hand. `tests/check-prompt.sh` checks the block loads.
 - **`kubelogin` must stay `aqua:Azure/kubelogin`.** mise's registry maps the bare name to int128/kubelogin, a different tool.
 - **Shims, not `mise activate`,** so non-interactive shells (Claude Code, make, VS Code tasks) resolve per-repo versions. Keep it that way.
 - Signing keys for the apt repos are checked against a pinned fingerprint or digest before apt trusts them.
@@ -33,5 +34,5 @@ Hooks are in `.pre-commit-config.yaml` at the repo root (pre-commit's default lo
 ## CI
 
 - **ci-pre-commit**: runs all linters on PRs to `main`
-- **ci-test-install**: runs `setup.sh` on both `ubuntu-24.04` and `macos-26` on PRs to `main` (only when `src/` files change), with `GITHUB_TOKEN` set so mise's GitHub API calls are not rate-limited
+- **ci-test-install**: runs `setup.sh` then `tests/check-prompt.sh` on both `ubuntu-24.04` and `macos-26` on PRs to `main` (only when `src/` or `tests/` files change), with `GITHUB_TOKEN` set so mise's GitHub API calls are not rate-limited
 - **cd-tag**: auto-creates a semver tag on every merge to `main` (default bump: patch)

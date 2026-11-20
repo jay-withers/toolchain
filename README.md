@@ -23,6 +23,8 @@ Shells get mise **shims** on PATH (`~/.profile`, `~/.bashrc`, and the zsh equiva
 
 Renovate keeps the versions in `src/mise/config.toml` current.
 
+Interactive shells also get a `# toolchain: prompt` block, which brings back what the dev container's shell had: the git branch in the prompt (now from [starship](https://starship.rs), which also shows status and tool versions) and grey inline suggestions as you type (accept with →), from [ble.sh](https://github.com/akinomyoga/ble.sh) in bash and [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) in zsh. Customise the prompt in `~/.config/starship.toml`. To opt out, delete the block (and keep the `# toolchain: prompt` comment so a later `setup.sh` doesn't add it back).
+
 ## What gets installed
 
 | Tools | From | Linux | macOS |
@@ -35,6 +37,9 @@ Renovate keeps the versions in `src/mise/config.toml` current.
 | mise | apt (signed repo) / Homebrew | yes | yes |
 | psql 18 | apt (PostgreSQL repo) / Homebrew `libpq` | yes | yes |
 | bubblewrap, socat (Claude Code sandbox) | apt | yes | not needed |
+| starship (prompt with git branch and status) | mise | yes | yes |
+| ble.sh (bash autosuggestions) | pinned release tarball | yes | no (zsh) |
+| zsh-autosuggestions | Homebrew | no (bash) | yes |
 | Az PowerShell module | pwsh | yes | yes |
 
 **Docker is not installed.** On WSL, install Docker Desktop and turn on WSL integration for the distro (or install Docker Engine yourself). `setup.sh` warns if docker is missing or its daemon is unreachable.
@@ -76,10 +81,11 @@ src/
     config.toml   # global mise tools, kept current by Renovate
 tests/
   test.sh         # runs setup in an Ubuntu 24.04 Docker container
+  check-prompt.sh # after setup: the prompt and autosuggestions load
 .github/
   workflows/
     ci-pre-commit.yml   # lints all files on PRs to main
-    ci-test-install.yml # runs setup.sh on ubuntu-24.04 and macos-26
+    ci-test-install.yml # runs setup.sh and check-prompt.sh on ubuntu-24.04 and macos-26
     ci-codeql.yml       # CodeQL over the workflows
     cd-tag.yml          # auto-tags on merge to main (semver patch bump)
 renovate.json           # automated dependency updates
