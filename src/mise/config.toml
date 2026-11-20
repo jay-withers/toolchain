@@ -32,10 +32,11 @@ helm = "4.3.2"
 k9s = "0.51.0"
 kubectx = "0.11.0"
 
-# Claude Code CLI (`claude`): Anthropic's native binary from its GitHub
-# releases. The VS Code extension bundles its own; this is for terminals.
-# Renovate bumps it, so src/shell/ turns off its self-updater.
-claude = "2.1.328"
+# Claude Code CLI (`claude`), from mise's registry entry for it. The VS Code
+# extension bundles its own; this is for terminals. Named with its backend,
+# like kubelogin, so Renovate's mise manager can resolve it. Renovate bumps it,
+# so [env] below turns off its self-updater.
+"aqua:anthropics/claude-code" = "2.1.328"
 
 # Languages and the hooks every repo runs
 python = "3.14.10"
@@ -55,6 +56,12 @@ starship = "1.27.0"
 atuin = "18.25.0"
 zoxide = "0.10.0"
 usage = "7.4.0"
+
+[env]
+# Set whenever a mise shim runs, so it covers every way claude starts
+# (terminal, make, VS Code tasks), not only interactive shells: its updater
+# would replace the version Renovate pins behind mise's back.
+DISABLE_AUTOUPDATER = "1"
 
 [settings]
 # Read .terraform-version too, so repos that have not yet moved to mise.toml
