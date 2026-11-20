@@ -29,9 +29,9 @@ Renovate keeps the versions in `src/mise/config.toml` current.
 - grey suggestions as you type, accepted with →: [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) and [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) in zsh, [ble.sh](https://github.com/akinomyoga/ble.sh) in bash
 - [atuin](https://atuin.sh) on Ctrl-R: history search by directory, exit code and time (the up arrow is left alone); `atuin import auto` brings in your old history
 - [zoxide](https://github.com/ajeetdsouza/zoxide): `z factory` jumps to the directory you use that matches
-- tab completion for gh, mise and az (kubectl and helm already had it)
+- tab completion for gh, mise, az, kubectl and helm; the slow-to-generate ones are cached in `~/.cache/toolchain`
 
-Kept fast: the shell tools' real install directories go first on PATH, so nothing run on every prompt or command goes through a mise shim, and gh's and az's completion scripts are cached in `~/.cache/toolchain` until their binary changes.
+Kept fast: the shell tools' real install directories go first on PATH, so nothing run on every prompt or command goes through a mise shim, and the completion scripts that are slow to generate (gh, az, kubectl, helm) are cached in `~/.cache/toolchain` per binary version.
 
 Moving to zsh: copy your own settings from `~/.bashrc` (exports, PATH, aliases) into `~/.zshrc`. Anything you want to win over the shared setup goes after the `# toolchain: shell` lines. To opt out of the shared setup, delete the line under `# toolchain: shell` but keep the comment, so re-runs leave it out. Machines set up with the earlier `# toolchain: prompt` block are migrated on the next `setup.sh`.
 
