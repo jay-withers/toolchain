@@ -2,4 +2,5 @@
 # comes from mise (src/mise/config.toml).
 brew "mise"
 brew "libpq" # psql
-brew "zsh-autosuggestions" # inline suggestions in zsh, sourced from ~/.zshrc
+brew "zsh-autosuggestions" # inline suggestions in zsh, sourced by src/shell/rc.zsh
+brew "zsh-syntax-highlighting" # likewise

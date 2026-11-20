@@ -1,0 +1,28 @@
+# toolchain's starship prompt, used when you have no ~/.config/starship.toml
+# of your own (src/shell/rc.{bash,zsh} point STARSHIP_CONFIG here). Copy it
+# there to change it: https://starship.rs/config/
+#
+# Lean on purpose. starship's language modules ("via 🐍 v3.14") run
+# `python --version` and the like on every prompt, and through mise's shims
+# that is a few hundred ms each - a visibly slow prompt. These modules only
+# read files and git, so the prompt stays instant.
+"$schema" = "https://starship.rs/config-schema.json"
+
+format = "$username$hostname$directory$git_branch$git_state$git_status$cmd_duration$jobs$line_break$status$character"
+add_newline = true
+
+[directory]
+truncation_length = 4
+truncate_to_repo = false
+
+[git_status]
+# The default also counts stashes; the stash stack is shared by every
+# worktree here, so it would flag every one of them.
+stashed = ""
+
+[cmd_duration]
+min_time = 2_000
+
+[status]
+disabled = false
+format = "[$status]($style) "

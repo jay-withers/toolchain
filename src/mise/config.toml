@@ -43,9 +43,13 @@ gitleaks = "8.30.1"
 jq = "1.8.2"
 yq = "4.54.3"
 
-# Interactive shells: the prompt (directory, git branch and status), wired
-# into ~/.bashrc and ~/.zshrc by common.sh
+# Interactive shells, wired in by src/shell/rc.{bash,zsh}: the prompt
+# (directory, git branch and status), Ctrl-R history search, `z` to jump to a
+# directory, and `usage`, which `mise completion` needs
 starship = "1.27.0"
+atuin = "18.25.0"
+zoxide = "0.10.0"
+usage = "7.4.0"
 
 [settings]
 # Read .terraform-version too, so repos that have not yet moved to mise.toml

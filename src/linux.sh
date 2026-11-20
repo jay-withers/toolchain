@@ -55,11 +55,14 @@ echo "deb [signed-by=/etc/apt/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/
 rm -rf "$tmp"
 
 $SUDO apt-get update -qq
-$SUDO apt-get install -y -qq mise "postgresql-client-${PGDG_CLIENT_MAJOR}"
+# zsh is the default shell (common.sh switches to it); its two plugins are
+# sourced by src/shell/rc.zsh.
+$SUDO apt-get install -y -qq mise "postgresql-client-${PGDG_CLIENT_MAJOR}" \
+  zsh zsh-autosuggestions zsh-syntax-highlighting
 
 echo "==> Installing ble.sh (bash autosuggestions)"
 # Grey, fish-style suggestions from history and completions as you type, as
-# the dev container had. common.sh sources it from ~/.bashrc. A directory of
+# the dev container had, for when you are in bash. src/shell/rc.bash loads it. A directory of
 # toolchain's own, so a ble.sh you installed yourself (~/.local/share/blesh)
 # is never touched. Reinstalled only when the pin changes: open shells load
 # ble.sh modules lazily, and replacing them under a running shell breaks it.

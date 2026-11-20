@@ -23,7 +23,17 @@ Shells get mise **shims** on PATH (`~/.profile`, `~/.bashrc`, and the zsh equiva
 
 Renovate keeps the versions in `src/mise/config.toml` current.
 
-Interactive shells also get a `# toolchain: prompt` block, which brings back what the dev container's shell had: the git branch in the prompt (now from [starship](https://starship.rs), which also shows status and tool versions) and grey inline suggestions as you type (accept with →), from [ble.sh](https://github.com/akinomyoga/ble.sh) in bash and [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) in zsh. Customise the prompt in `~/.config/starship.toml`. To opt out, delete the block (and keep the `# toolchain: prompt` comment so a later `setup.sh` doesn't add it back).
+**zsh is the default shell.** On Linux, `setup.sh` installs it and makes it your login shell (`chsh`, through sudo); set `TOOLCHAIN_LOGIN_SHELL=keep` to leave yours alone. Both shells get the same interactive setup, from [src/shell/rc.zsh](src/shell/rc.zsh) and [src/shell/rc.bash](src/shell/rc.bash) in this clone, which `~/.zshrc` and `~/.bashrc` source under a `# toolchain: shell` comment, so `git pull` updates it:
+
+- a [starship](https://starship.rs) prompt with the git branch and status, from the lean [src/shell/starship.toml](src/shell/starship.toml) unless you have a `~/.config/starship.toml` (it leaves out the language-version modules, which run tools through mise's shims on every prompt and make it slow)
+- grey suggestions as you type, accepted with →: [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) and [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) in zsh, [ble.sh](https://github.com/akinomyoga/ble.sh) in bash
+- [atuin](https://atuin.sh) on Ctrl-R: history search by directory, exit code and time (the up arrow is left alone); `atuin import auto` brings in your old history
+- [zoxide](https://github.com/ajeetdsouza/zoxide): `z factory` jumps to the directory you use that matches
+- tab completion for gh, mise and az (kubectl and helm already had it)
+
+Kept fast: the shell tools' real install directories go first on PATH, so nothing run on every prompt or command goes through a mise shim, and gh's and az's completion scripts are cached in `~/.cache/toolchain` until their binary changes.
+
+Moving to zsh: copy your own settings from `~/.bashrc` (exports, PATH, aliases) into `~/.zshrc`. Anything you want to win over the shared setup goes after the `# toolchain: shell` lines. To opt out of the shared setup, delete the line under `# toolchain: shell` but keep the comment, so re-runs leave it out. Machines set up with the earlier `# toolchain: prompt` block are migrated on the next `setup.sh`.
 
 ## What gets installed
 
@@ -37,9 +47,9 @@ Interactive shells also get a `# toolchain: prompt` block, which brings back wha
 | mise | apt (signed repo) / Homebrew | yes | yes |
 | psql 18 | apt (PostgreSQL repo) / Homebrew `libpq` | yes | yes |
 | bubblewrap, socat (Claude Code sandbox) | apt | yes | not needed |
-| starship (prompt with git branch and status) | mise | yes | yes |
+| starship (prompt), atuin (Ctrl-R history), zoxide (`z`), usage (for mise completions) | mise | yes | yes |
+| zsh, zsh-autosuggestions, zsh-syntax-highlighting | apt / Homebrew (zsh is built in) | yes | yes |
 | ble.sh (bash autosuggestions) | pinned release tarball | yes | no (zsh) |
-| zsh-autosuggestions | Homebrew | no (bash) | yes |
 | Az PowerShell module | pwsh | yes | yes |
 
 **Docker is not installed.** On WSL, install Docker Desktop and turn on WSL integration for the distro (or install Docker Engine yourself). `setup.sh` warns if docker is missing or its daemon is unreachable.
@@ -76,12 +86,17 @@ src/
   linux.sh        # apt: mise, psql, sandbox prerequisites (signing keys checked)
   macos.sh        # Homebrew: mise, libpq
   common.sh       # links the global mise config, installs tools, shell setup, checks
+  shell/
+    rc.zsh        # interactive zsh: prompt, suggestions, completions, history
+    rc.bash       # the same for bash
+    starship.toml # the default prompt config
   Brewfile        # macOS packages
   mise/
     config.toml   # global mise tools, kept current by Renovate
 tests/
   test.sh         # runs setup in an Ubuntu 24.04 Docker container
-  check-prompt.sh # after setup: the prompt and autosuggestions load
+  check-prompt.sh # after setup: both shells load their interactive setup
+  seed-old-rc.sh  # before setup in test.sh: the old rc block, to test migration
 .github/
   workflows/
     ci-pre-commit.yml   # lints all files on PRs to main
