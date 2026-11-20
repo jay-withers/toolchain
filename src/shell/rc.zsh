@@ -20,15 +20,16 @@ zstyle ':completion:*' menu select
 # Calls through a mise shim cost a few hundred ms, and atuin and zoxide run on
 # every command and cd. So resolve the real install directories once, in one
 # call, and put the shell tools' first on PATH (no repo pins those, so this
-# never shadows a per-repo version). gh's and az's feed the completion cache.
-_toolchain_paths="$(command -v mise &>/dev/null && mise bin-paths starship atuin zoxide usage gh pypi:azure-cli </dev/null 2>/dev/null)"
+# never shadows a per-repo version). The rest feed the completion cache.
+_toolchain_paths="$(command -v mise &>/dev/null && mise bin-paths starship atuin zoxide usage gh kubectl helm pypi:azure-cli </dev/null 2>/dev/null)"
 _toolchain_dir() { grep -m1 "/installs/$1/" <<<"$_toolchain_paths"; }
 for _toolchain_tool in usage zoxide atuin starship; do
   _toolchain_d="$(_toolchain_dir "$_toolchain_tool")"
   [[ -n $_toolchain_d && :$PATH: != *":$_toolchain_d:"* ]] && PATH="$_toolchain_d:$PATH"
 done
 
-# Generating gh's and az's completion scripts takes most of a second, so each
+# Generating gh's, kubectl's, helm's and az's completion scripts takes from a
+# quarter to most of a second each, so each
 # is cached, tagged with the real binary's path. mise installs each version in
 # its own directory, so a bump changes the path and regenerates the cache.
 # Written to a temp file and moved into place, so shells starting together
@@ -61,10 +62,15 @@ _toolchain_az_complete="${_toolchain_az%/*}/register-python-argcomplete"
 # below would fail. -i skips those directories instead of asking.
 (( ${+functions[compdef]} )) || { autoload -Uz compinit && compinit -i; }
 
-# Completions kubectl and helm lack in the "# toolchain: mise" block. mise's
-# needs `usage`, which the global mise config installs, and is quick enough to
-# run each time.
+# Completions. mise's needs `usage`, which the global mise config installs,
+# and is quick enough to run each time.
 _toolchain_cached gh.zsh "$_toolchain_gh" "$_toolchain_gh" completion -s zsh
+for _toolchain_tool in kubectl helm; do
+  _toolchain_d="$(_toolchain_dir "$_toolchain_tool")"
+  _toolchain_d="${_toolchain_d:+$_toolchain_d/$_toolchain_tool}"
+  [[ -n $_toolchain_d ]] || _toolchain_d="$(command -v "$_toolchain_tool")"
+  _toolchain_cached "$_toolchain_tool.zsh" "$_toolchain_d" "$_toolchain_d" completion zsh
+done
 command -v mise &>/dev/null && command -v usage &>/dev/null && source <(mise completion zsh)
 # az's is argcomplete's bash one, through zsh's bash-completion emulation.
 if [[ -x $_toolchain_az_complete ]]; then

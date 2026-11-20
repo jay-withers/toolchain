@@ -10,6 +10,7 @@ fail() { echo "  FAIL: $*"; exit 1; }
 count() { grep -cxF "$2" "$1" 2>/dev/null || true; }
 
 check_rc() {
+  ! grep -qE '^command -v (kubectl|helm) .*completion' "$1" || fail "$1 still generates kubectl/helm completions on every start"
   [[ "$(count "$1" "# toolchain: shell")" == "1" ]] || fail "$1 has no single '# toolchain: shell' block"
   [[ "$(count "$1" "# toolchain: prompt")" == "0" ]] || fail "$1 still has the old '# toolchain: prompt' block"
   ! grep -q 'starship init' "$1" || fail "$1 still loads starship itself (old block not migrated)"
@@ -19,12 +20,12 @@ echo "==> Checking the interactive shells"
 
 check_rc "$HOME/.zshrc"
 # shellcheck disable=SC2016  # evaluated by zsh
-raw="$(zsh -ic 'print -r -- "CHECK starship=${STARSHIP_SHELL:-} suggest=${ZSH_AUTOSUGGEST_STRATEGY:+y} highlight=${ZSH_HIGHLIGHT_VERSION:+y} atuin=${ATUIN_SESSION:+y} zoxide=${+functions[__zoxide_z]} gh=${+_comps[gh]} mise=${+_comps[mise]} az=${+_comps[az]} shims=$( { typeset -f; whence -p atuin zoxide starship; } | grep -c /shims/)"' \
+raw="$(zsh -ic 'print -r -- "CHECK starship=${STARSHIP_SHELL:-} suggest=${ZSH_AUTOSUGGEST_STRATEGY:+y} highlight=${ZSH_HIGHLIGHT_VERSION:+y} atuin=${ATUIN_SESSION:+y} zoxide=${+functions[__zoxide_z]} gh=${+_comps[gh]} mise=${+_comps[mise]} az=${+_comps[az]} k8s=$(( ${+_comps[kubectl]} + ${+_comps[helm]} )) shims=$( { typeset -f; whence -p atuin zoxide starship; } | grep -c mise/shims/)"' \
   </dev/null 2>&1 || true)"
 out="$(grep -ao 'CHECK .*' <<<"$raw" | tail -1 || true)"
-[[ "$out" == "CHECK starship=zsh suggest=y highlight=y atuin=y zoxide=1 gh=1 mise=1 az=1 shims=0" ]] ||
+[[ "$out" == "CHECK starship=zsh suggest=y highlight=y atuin=y zoxide=1 gh=1 mise=1 az=1 k8s=2 shims=0" ]] ||
   { echo "  zsh output (last 40 lines):"; tail -40 <<<"$raw"; }
-[[ "$out" == "CHECK starship=zsh suggest=y highlight=y atuin=y zoxide=1 gh=1 mise=1 az=1 shims=0" ]] ||
+[[ "$out" == "CHECK starship=zsh suggest=y highlight=y atuin=y zoxide=1 gh=1 mise=1 az=1 k8s=2 shims=0" ]] ||
   fail "zsh is missing part of its setup: ${out:-no output}"
 echo "  ok: zsh (starship, autosuggestions, syntax highlighting, atuin, zoxide, completions)"
 
@@ -39,8 +40,8 @@ if [[ "$(uname)" != "Darwin" ]]; then
   probe="$(mktemp)"
   # shellcheck disable=SC2016  # evaluated by the interactive bash
   printf '%s\n' \
-    'shims=$(declare -f | grep -c /shims/)$(type -P atuin zoxide starship | grep -c /shims/)' \
-    'echo "CHECK starship=${STARSHIP_SHELL:-} ble=${BLE_VERSION:+y} atuin=${ATUIN_SESSION:+y} zoxide=$(type -t __zoxide_z) completions=$(complete -p gh mise az 2>/dev/null | wc -l) shims=$shims"' \
+    'shims=$(declare -f | grep -c mise/shims/)$(type -P atuin zoxide starship | grep -c mise/shims/)' \
+    'echo "CHECK starship=${STARSHIP_SHELL:-} ble=${BLE_VERSION:+y} atuin=${ATUIN_SESSION:+y} zoxide=$(type -t __zoxide_z) completions=$(complete -p gh mise az kubectl helm 2>/dev/null | wc -l) shims=$shims"' \
     > "$probe"
   # ble.sh builds its cache on its first start and drops anything typed
   # meanwhile, so start one shell to warm it up, then type the probe into a
@@ -51,7 +52,7 @@ if [[ "$(uname)" != "Darwin" ]]; then
   rm -f "$probe"
   out="$(grep -ao 'CHECK starship=[a-z]* ble=[a-z]* atuin=[a-z]* zoxide=[a-z]* completions=[0-9]* shims=[0-9]*' <<<"$raw" | tail -1 || true)"
   [[ -n "$out" ]] || { echo "  bash output (last 40 lines, control codes stripped):"; sed -E 's/\x1b\[[0-9;?>=]*[a-zA-Z]//g' <<<"$raw" | tail -40; }
-  [[ "$out" == "CHECK starship=bash ble=y atuin=y zoxide=function completions=3 shims=00" ]] ||
+  [[ "$out" == "CHECK starship=bash ble=y atuin=y zoxide=function completions=5 shims=00" ]] ||
     fail "bash is missing part of its setup: ${out:-no output}"
   echo "  ok: bash (starship, ble.sh, atuin, zoxide, completions)"
 

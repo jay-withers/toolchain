@@ -87,14 +87,10 @@ fi
 PROFILE_BLOCK="# toolchain: mise
 ${BREW_ENV:+$BREW_ENV
 }command -v mise &>/dev/null && eval \"\$(mise activate bash --shims)\""
-BASHRC_BLOCK="${PROFILE_BLOCK}
-command -v kubectl &>/dev/null && source <(kubectl completion bash)
-command -v helm &>/dev/null && source <(helm completion bash)"
+BASHRC_BLOCK="${PROFILE_BLOCK}"
 ZSH_PROFILE_BLOCK="${PROFILE_BLOCK//activate bash/activate zsh}"
 ZSHRC_BLOCK="${ZSH_PROFILE_BLOCK}
-autoload -Uz compinit && compinit -i
-command -v kubectl &>/dev/null && source <(kubectl completion zsh)
-command -v helm &>/dev/null && source <(helm completion zsh)"
+autoload -Uz compinit && compinit -i"
 
 # Everything else interactive (prompt, autosuggestions, completions, history
 # search) lives in src/shell/rc.{bash,zsh} in this clone, so `git pull` updates
@@ -106,12 +102,39 @@ BASHRC_SHELL_BLOCK="# toolchain: shell
 ZSHRC_SHELL_BLOCK="# toolchain: shell
 [[ -f \"$REPO_DIR/src/shell/rc.zsh\" ]] && source \"$REPO_DIR/src/shell/rc.zsh\""
 
+# The "# toolchain: mise" block used to generate kubectl's and helm's
+# completions on every shell start, close to a second through mise's shims.
+# src/shell/rc.{bash,zsh} now cache them, so drop those two lines - only where
+# they sit in that block, never a copy of yours elsewhere.
+_drop_k8s_completions() {
+  local file="$1" tmp
+  [[ -f "$file" ]] && grep -qE '^command -v (kubectl|helm) &>/dev/null && source <\((kubectl|helm) completion (bash|zsh)\)$' "$file" || return 0
+  tmp="$(mktemp)"
+  if ! awk '
+    $0 == "# toolchain: mise" { inblock = 1; print; next }
+    inblock && $0 ~ /^command -v (kubectl|helm) &>\/dev\/null && source <\((kubectl|helm) completion (bash|zsh)\)$/ { next }
+    $0 == "" { inblock = 0 }
+    { print }
+  ' "$file" >"$tmp"; then
+    rm -f "$tmp"
+    echo "  FAIL: could not update $file; left unchanged"
+    exit 1
+  fi
+  if ! cmp -s "$tmp" "$file"; then
+    [[ -e "$file.toolchain-bak" ]] || cp -p "$file" "$file.toolchain-bak"  # keep the earliest
+    cat "$tmp" >"$file"
+    echo "  updated: $file (kubectl/helm completions now cached by src/shell/; old copy in $file.toolchain-bak)"
+  fi
+  rm -f "$tmp"
+}
+
 # Before src/shell/, setup wrote a "# toolchain: prompt" block of inline lines,
 # which the files above now cover. Remove that block - the marker and the
 # starship, ble.sh and zsh-autosuggestions lines straight after it, nothing
 # elsewhere - so nothing loads twice. If its starship line had been deleted
 # (opted out), the marker becomes "# toolchain: shell" on its own, which keeps
-# the opt-out. The old file is kept as <file>.toolchain-bak.
+# the opt-out. The original file is kept as <file>.toolchain-bak (an existing
+# backup is never overwritten, so it stays the earliest).
 _migrate_prompt_block() {
   local file="$1" tmp
   grep -qxF "# toolchain: prompt" "$file" 2>/dev/null || return 0
@@ -134,7 +157,7 @@ _migrate_prompt_block() {
     echo "  FAIL: could not migrate $file; left unchanged"
     exit 1
   fi
-  cp -p "$file" "$file.toolchain-bak"
+  [[ -e "$file.toolchain-bak" ]] || cp -p "$file" "$file.toolchain-bak"  # keep the earliest
   cat "$tmp" >"$file"
   rm -f "$tmp"
   echo "  migrated: $file (# toolchain: prompt -> # toolchain: shell; old copy in $file.toolchain-bak)"
@@ -143,11 +166,13 @@ _migrate_prompt_block() {
 _append_if_missing ~/.profile "# toolchain: mise" "$PROFILE_BLOCK"
 _append_if_missing ~/.bashrc "# toolchain: mise" "$BASHRC_BLOCK"
 _migrate_prompt_block ~/.bashrc
+_drop_k8s_completions ~/.bashrc
 _append_if_missing ~/.bashrc "# toolchain: shell" "$BASHRC_SHELL_BLOCK"
 if [[ "$(uname)" == "Darwin" ]] || command -v zsh &>/dev/null; then
   _append_if_missing ~/.zprofile "# toolchain: mise" "$ZSH_PROFILE_BLOCK"
   _append_if_missing ~/.zshrc "# toolchain: mise" "$ZSHRC_BLOCK"
   _migrate_prompt_block ~/.zshrc
+  _drop_k8s_completions ~/.zshrc
   _append_if_missing ~/.zshrc "# toolchain: shell" "$ZSHRC_SHELL_BLOCK"
 fi
 
