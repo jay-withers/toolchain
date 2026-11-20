@@ -17,5 +17,6 @@ esac
 source "$SCRIPT_DIR/common.sh"
 
 echo ""
-echo "Setup complete. Open a new shell (or run: source ~/.bashrc) to pick up mise."
+echo "Setup complete. Open a new terminal: it starts zsh, with mise and the shell setup."
+echo "(bash is set up too; TOOLCHAIN_LOGIN_SHELL=keep leaves your login shell alone.)"
 echo "Then, in each repo: mise trust && mise install"

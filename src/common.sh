@@ -34,7 +34,7 @@ eval "$(mise activate bash --shims)"
 
 echo "==> Verifying tools"
 for tool in az gh terraform tflint terraform-docs checkov python uv node pre-commit \
-    shellcheck actionlint gitleaks jq yq kubectx psql starship; do
+    shellcheck actionlint gitleaks jq yq kubectx psql starship atuin zoxide usage zsh; do
   verify "$tool"
 done
 verify kubelogin --version
@@ -71,10 +71,6 @@ _append_if_missing() {
   grep -qF "$marker" "$file" 2>/dev/null && { echo "  already configured: $file ($marker)"; return; }
   printf '\n%s\n' "$content" >> "$file"
   echo "  configured: $file ($marker)"
-  if [[ "$marker" == "# toolchain: prompt" ]]; then
-    echo "    This replaces any prompt or theme set earlier in $file. To keep yours, delete"
-    echo "    the lines under '# toolchain: prompt' but keep that comment, so re-runs leave it out."
-  fi
 }
 
 # Shims rather than `mise activate`: a shim picks the version the current
@@ -96,36 +92,82 @@ command -v kubectl &>/dev/null && source <(kubectl completion bash)
 command -v helm &>/dev/null && source <(helm completion bash)"
 ZSH_PROFILE_BLOCK="${PROFILE_BLOCK//activate bash/activate zsh}"
 ZSHRC_BLOCK="${ZSH_PROFILE_BLOCK}
-autoload -Uz compinit && compinit
+autoload -Uz compinit && compinit -i
 command -v kubectl &>/dev/null && source <(kubectl completion zsh)
 command -v helm &>/dev/null && source <(helm completion zsh)"
 
-# The interactive prompt, a separate block so machines set up before it still
-# get it. It brings back what the dev container's shell had: the git branch in
-# the prompt (now from starship, in both shells) and the rest of the line
-# suggested as you type (ble.sh in bash on Linux, zsh-autosuggestions in zsh
-# on macOS). Each line is a no-op where its tool is missing.
-# ble.sh goes last: it takes over line editing once the rest of the rc ran.
-# shellcheck disable=SC2016  # expands at shell startup, not here
-BASHRC_PROMPT_BLOCK='# toolchain: prompt
-command -v starship &>/dev/null && eval "$(starship init bash)"
-[[ $- == *i* && -f "${XDG_DATA_HOME:-$HOME/.local/share}/toolchain/blesh/ble.sh" ]] && source "${XDG_DATA_HOME:-$HOME/.local/share}/toolchain/blesh/ble.sh"'
-# shellcheck disable=SC2016  # expands at shell startup, not here
-ZSHRC_PROMPT_BLOCK='# toolchain: prompt
-command -v starship &>/dev/null && eval "$(starship init zsh)"'
-if [[ "$(uname)" == "Darwin" ]]; then
-  ZSH_AUTOSUGGEST="$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-  ZSHRC_PROMPT_BLOCK="${ZSHRC_PROMPT_BLOCK}
-[[ -f \"$ZSH_AUTOSUGGEST\" ]] && source \"$ZSH_AUTOSUGGEST\""
-fi
+# Everything else interactive (prompt, autosuggestions, completions, history
+# search) lives in src/shell/rc.{bash,zsh} in this clone, so `git pull` updates
+# it. The rc file only sources it, guarded so a moved clone is a no-op.
+# To opt out, delete the source line but keep the "# toolchain: shell" comment,
+# so re-runs leave it out.
+BASHRC_SHELL_BLOCK="# toolchain: shell
+[[ -f \"$REPO_DIR/src/shell/rc.bash\" ]] && source \"$REPO_DIR/src/shell/rc.bash\""
+ZSHRC_SHELL_BLOCK="# toolchain: shell
+[[ -f \"$REPO_DIR/src/shell/rc.zsh\" ]] && source \"$REPO_DIR/src/shell/rc.zsh\""
+
+# Before src/shell/, setup wrote a "# toolchain: prompt" block of inline lines,
+# which the files above now cover. Remove that block - the marker and the
+# starship, ble.sh and zsh-autosuggestions lines straight after it, nothing
+# elsewhere - so nothing loads twice. If its starship line had been deleted
+# (opted out), the marker becomes "# toolchain: shell" on its own, which keeps
+# the opt-out. The old file is kept as <file>.toolchain-bak.
+_migrate_prompt_block() {
+  local file="$1" tmp
+  grep -qxF "# toolchain: prompt" "$file" 2>/dev/null || return 0
+  tmp="$(mktemp)"
+  if ! awk '
+    state == 1 {
+      state = 0
+      if ($0 ~ /^command -v starship &>\/dev\/null && eval "\$\(starship init (bash|zsh)\)"$/) { state = 2; next }
+      print "# toolchain: shell"
+    }
+    state == 2 {
+      if ($0 ~ /\/blesh\/ble\.sh" \]\] && source "/ || $0 ~ /\/zsh-autosuggestions\.zsh" \]\] && source "/) next
+      state = 0
+    }
+    $0 == "# toolchain: prompt" { state = 1; next }
+    { print }
+    END { if (state == 1) print "# toolchain: shell" }
+  ' "$file" >"$tmp"; then
+    rm -f "$tmp"
+    echo "  FAIL: could not migrate $file; left unchanged"
+    exit 1
+  fi
+  cp -p "$file" "$file.toolchain-bak"
+  cat "$tmp" >"$file"
+  rm -f "$tmp"
+  echo "  migrated: $file (# toolchain: prompt -> # toolchain: shell; old copy in $file.toolchain-bak)"
+}
 
 _append_if_missing ~/.profile "# toolchain: mise" "$PROFILE_BLOCK"
 _append_if_missing ~/.bashrc "# toolchain: mise" "$BASHRC_BLOCK"
-_append_if_missing ~/.bashrc "# toolchain: prompt" "$BASHRC_PROMPT_BLOCK"
+_migrate_prompt_block ~/.bashrc
+_append_if_missing ~/.bashrc "# toolchain: shell" "$BASHRC_SHELL_BLOCK"
 if [[ "$(uname)" == "Darwin" ]] || command -v zsh &>/dev/null; then
   _append_if_missing ~/.zprofile "# toolchain: mise" "$ZSH_PROFILE_BLOCK"
   _append_if_missing ~/.zshrc "# toolchain: mise" "$ZSHRC_BLOCK"
-  _append_if_missing ~/.zshrc "# toolchain: prompt" "$ZSHRC_PROMPT_BLOCK"
+  _migrate_prompt_block ~/.zshrc
+  _append_if_missing ~/.zshrc "# toolchain: shell" "$ZSHRC_SHELL_BLOCK"
+fi
+
+echo "==> Making zsh the login shell"
+# macOS has defaulted to zsh since Catalina. On Linux, chsh through sudo, as
+# apt was. TOOLCHAIN_LOGIN_SHELL=keep leaves your login shell alone.
+# The system zsh (apt's /usr/bin/zsh), not whichever zsh PATH finds first.
+ZSH_PATH="$(grep -m1 -xE '/(usr/)?bin/zsh' /etc/shells 2>/dev/null || command -v zsh || true)"
+LOGIN_SHELL="$( (getent passwd "$(id -un)" 2>/dev/null || true) | cut -d: -f7)"
+if [[ "$(uname)" == "Darwin" ]]; then
+  echo "  macOS: zsh is the default; left as is"
+elif [[ "${TOOLCHAIN_LOGIN_SHELL:-}" == "keep" ]]; then
+  echo "  TOOLCHAIN_LOGIN_SHELL=keep: left as $LOGIN_SHELL"
+elif [[ "${LOGIN_SHELL##*/}" == "zsh" ]]; then
+  echo "  already zsh ($LOGIN_SHELL)"
+else
+  SUDO=""
+  [[ "$(id -u)" != "0" ]] && SUDO="sudo"
+  $SUDO chsh -s "$ZSH_PATH" "$(id -un)"
+  echo "  ok: $(id -un) now logs in to $ZSH_PATH (new terminals; bash is still there)"
 fi
 
 echo "==> Checking Docker"
