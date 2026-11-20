@@ -29,6 +29,14 @@ out="$(grep -ao 'CHECK .*' <<<"$raw" | tail -1 || true)"
   fail "zsh is missing part of its setup: ${out:-no output}"
 echo "  ok: zsh (starship, autosuggestions, syntax highlighting, atuin, zoxide, completions)"
 
+# claude, from a terminal as you would start it. It runs through its mise
+# shim, which applies the global config's [env].
+claude_version="$(zsh -ic 'claude --version' </dev/null 2>/dev/null | grep -a 'Claude Code' | tail -1 || true)"
+[[ -n "$claude_version" ]] || fail "claude --version failed in zsh (not installed by mise?)"
+[[ "$(zsh -ic 'mise exec -- printenv DISABLE_AUTOUPDATER' </dev/null 2>/dev/null | tail -1)" == "1" ]] ||
+  fail "mise does not set DISABLE_AUTOUPDATER=1, so claude would update itself"
+echo "  ok: claude $claude_version, self-updater off"
+
 if [[ "$(uname)" != "Darwin" ]]; then
   check_rc "$HOME/.bashrc"
   blesh="${XDG_DATA_HOME:-$HOME/.local/share}/toolchain/blesh/ble.sh"
