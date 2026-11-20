@@ -7,6 +7,10 @@
 
 [[ -o interactive ]] || return 0
 
+# Claude Code comes from mise at the version Renovate pins; its own updater
+# would replace it behind mise's back.
+export DISABLE_AUTOUPDATER=1
+
 # History: zsh keeps none on disk unless told to. Shared between open shells.
 HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
 (( HISTSIZE >= 50000 )) || HISTSIZE=50000

@@ -8,6 +8,10 @@
 # macOS's /bin/bash is 3.2: no `source <(...)`, no ble.sh. zsh is the shell there.
 (( BASH_VERSINFO[0] >= 4 )) || return 0
 
+# Claude Code comes from mise at the version Renovate pins; its own updater
+# would replace it behind mise's back.
+export DISABLE_AUTOUPDATER=1
+
 # ble.sh: grey suggestions from history and completions as you type (→ accepts),
 # plus syntax highlighting. Loaded first and attached last, as its README asks,
 # so the prompt and history hooks below register with it.

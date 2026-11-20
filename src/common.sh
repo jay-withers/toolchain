@@ -34,7 +34,7 @@ eval "$(mise activate bash --shims)"
 
 echo "==> Verifying tools"
 for tool in az gh terraform tflint terraform-docs checkov python uv node pre-commit \
-    shellcheck actionlint gitleaks jq yq kubectx psql starship atuin zoxide usage zsh; do
+    shellcheck actionlint gitleaks jq yq kubectx psql starship atuin zoxide usage zsh claude; do
   verify "$tool"
 done
 verify kubelogin --version

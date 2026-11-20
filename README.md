@@ -44,6 +44,7 @@ Moving to zsh: copy your own settings from `~/.bashrc` (exports, PATH, aliases) 
 | terraform (default), tflint, terraform-docs, checkov | mise | yes | yes |
 | kubectl, helm, k9s, kubectx | mise | yes | yes |
 | python, uv, node, pre-commit, shellcheck, actionlint, gitleaks | mise | yes | yes |
+| claude (Claude Code CLI; its self-updater is off, Renovate bumps it) | mise | yes | yes |
 | mise | apt (signed repo) / Homebrew | yes | yes |
 | psql 18 | apt (PostgreSQL repo) / Homebrew `libpq` | yes | yes |
 | bubblewrap, socat (Claude Code sandbox) | apt | yes | not needed |
