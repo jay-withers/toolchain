@@ -7,7 +7,7 @@
 # A repo's own mise.toml overrides any version here while you are inside it,
 # and is what CI installs (jay-withers/workflows v1.26.0+), so pin anything a
 # repo's build or lint depends on in that repo, not only here. Renovate's mise
-# manager keeps these versions current.
+# manager keeps these versions current, except gcloud (see below).
 
 [tools]
 # Azure
@@ -15,6 +15,16 @@
 # The registry's "kubelogin" is int128/kubelogin, an unrelated OIDC helper.
 "aqua:Azure/kubelogin" = "0.2.22"
 powershell = "7.7.0"
+
+# Google Cloud: gcloud, gsutil and bq, with the SDK's own bundled Python.
+# Renovate's mise manager can't resolve the vfox backend mise's registry uses,
+# so renovate.json tracks it through the google/cloud-sdk image's tags, which
+# carry the same version.
+gcloud = "594.0.0"
+
+# AWS CLI v2. Named with its backend, like kubelogin, so Renovate's mise
+# manager can resolve it.
+"aqua:aws/aws-cli" = "2.42.1"
 
 # GitHub
 gh = "2.104.0"

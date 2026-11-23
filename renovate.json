@@ -1,5 +1,55 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>jay-withers/renovate"],
-  "autoApprove": true
+  "autoApprove": true,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "gcloud in src/mise/config.toml. Renovate's mise manager can't resolve its vfox backend; the google/cloud-sdk image is tagged with every SDK version.",
+      "managerFilePatterns": [
+        "/(^|/)src/mise/config\\.toml$/"
+      ],
+      "matchStrings": [
+        "(?m)^gcloud = \"(?<currentValue>[0-9.]+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "google/cloud-sdk",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "The image is only gcloud's version source: config.toml holds a version, never a digest, so there is nothing to pin or digest-update.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "google/cloud-sdk"
+      ],
+      "pinDigests": false
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "google/cloud-sdk"
+      ],
+      "matchUpdateTypes": [
+        "digest",
+        "pinDigest"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "gcloud bumps go in the mise tools PR with every other edit to src/mise/config.toml, which separate PRs would conflict over.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "google/cloud-sdk"
+      ],
+      "groupName": "mise tools"
+    }
+  ]
 }

@@ -37,6 +37,8 @@ for tool in az gh terraform tflint terraform-docs checkov python uv node pre-com
     shellcheck actionlint gitleaks jq yq kubectx psql starship atuin zoxide usage zsh claude; do
   verify "$tool"
 done
+verify gcloud --version
+verify aws --version
 verify kubelogin --version
 verify pwsh -v
 verify kubectl version --client
