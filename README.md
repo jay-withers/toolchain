@@ -40,6 +40,7 @@ Moving to zsh: copy your own settings from `~/.bashrc` (exports, PATH, aliases) 
 | Tools | From | Linux | macOS |
 | ----- | ---- | ----- | ----- |
 | az, kubelogin (Azure's), PowerShell | mise | yes | yes |
+| gcloud (with gsutil and bq), aws (AWS CLI v2) | mise | yes | yes |
 | gh, jq, yq | mise | yes | yes |
 | terraform (default), tflint, terraform-docs, checkov | mise | yes | yes |
 | kubectl, helm, k9s, kubectx | mise | yes | yes |
