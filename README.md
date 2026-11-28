@@ -49,6 +49,7 @@ Moving to zsh: copy your own settings from `~/.bashrc` (exports, PATH, aliases) 
 | mise | apt (signed repo) / Homebrew | yes | yes |
 | psql 18 | apt (PostgreSQL repo) / Homebrew `libpq` | yes | yes |
 | bubblewrap, socat (Claude Code sandbox) | apt | yes | not needed |
+| Chromium's shared libraries (nss, nspr, alsa, atk, X11 and the rest) for Playwright browser tests; Playwright downloads Chromium itself | apt | yes | not needed |
 | starship (prompt), atuin (Ctrl-R history), zoxide (`z`), usage (for mise completions) | mise | yes | yes |
 | zsh, zsh-autosuggestions, zsh-syntax-highlighting | apt / Homebrew (zsh is built in) | yes | yes |
 | ble.sh (bash autosuggestions) | pinned release tarball | yes | no (zsh) |
@@ -85,7 +86,7 @@ make test
 ```text
 src/
   setup.sh        # entry point: runs the platform script, then common.sh
-  linux.sh        # apt: mise, psql, sandbox prerequisites (signing keys checked)
+  linux.sh        # apt: mise, psql, sandbox prerequisites, Chromium libs (signing keys checked)
   macos.sh        # Homebrew: mise, libpq
   common.sh       # links the global mise config, installs tools, shell setup, checks
   shell/
@@ -98,11 +99,12 @@ src/
 tests/
   test.sh         # runs setup in an Ubuntu 24.04 Docker container
   check-prompt.sh # after setup: both shells load their interactive setup
+  check-browser-libs.sh # after setup on Linux: Chromium's shared libraries resolve
   seed-old-rc.sh  # before setup in test.sh: the old rc block, to test migration
 .github/
   workflows/
     ci-pre-commit.yml   # lints all files on PRs to main
-    ci-test-install.yml # runs setup.sh and check-prompt.sh on ubuntu-24.04 and macos-26
+    ci-test-install.yml # runs setup.sh and the checks on ubuntu-24.04 and macos-26
     ci-codeql.yml       # CodeQL over the workflows
     cd-tag.yml          # auto-tags on merge to main (semver patch bump)
 renovate.json           # automated dependency updates
