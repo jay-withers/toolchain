@@ -15,7 +15,7 @@
 # pulls in pymsalruntime, which publishes no wheel for a CPython newer than
 # its release (none for 3.15 as of 2026-11). Raise it once pymsalruntime ships
 # wheels for the global python.
-"pypi:azure-cli" = { version = "2.92.0", python = "3.14" }
+"pypi:azure-cli" = { version = "2.93.0", python = "3.14" }
 # The registry's "kubelogin" is int128/kubelogin, an unrelated OIDC helper.
 "aqua:Azure/kubelogin" = "0.2.22"
 powershell = "7.7.0"
@@ -24,14 +24,14 @@ powershell = "7.7.0"
 # Renovate's mise manager can't resolve the vfox backend mise's registry uses,
 # so renovate.json tracks it through the google/cloud-sdk image's tags, which
 # carry the same version.
-gcloud = "594.0.0"
+gcloud = "594.0.1"
 
 # AWS CLI v2. Named with its backend, like kubelogin, so Renovate's mise
 # manager can resolve it.
-"aqua:aws/aws-cli" = "2.42.1"
+"aqua:aws/aws-cli" = "2.42.3"
 
 # GitHub
-gh = "2.104.0"
+gh = "2.105.0"
 
 # Terraform: a default for repos that pin none. Repos pin their own in
 # mise.toml (or, until they move, .terraform-version: see [settings]).
@@ -50,11 +50,11 @@ kubectx = "0.11.0"
 # extension bundles its own; this is for terminals. Named with its backend,
 # like kubelogin, so Renovate's mise manager can resolve it. Renovate bumps it,
 # so [env] below turns off its self-updater.
-"aqua:anthropics/claude-code" = "2.1.328"
+"aqua:anthropics/claude-code" = "2.1.332"
 
 # Languages and the hooks every repo runs
 python = "3.15.2"
-uv = "0.13.8"
+uv = "0.13.10"
 node = "26.13.1"
 pre-commit = "4.7.0"
 shellcheck = "0.11.0"
@@ -67,9 +67,9 @@ yq = "4.54.3"
 # (directory, git branch and status), Ctrl-R history search, `z` to jump to a
 # directory, and `usage`, which `mise completion` needs
 starship = "1.27.0"
-atuin = "18.25.0"
+atuin = "18.25.1"
 zoxide = "0.10.0"
-usage = "7.4.0"
+usage = "7.4.1"
 
 [env]
 # Set whenever a mise shim runs, so it covers every way claude starts
