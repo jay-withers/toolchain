@@ -28,6 +28,19 @@ $SUDO apt-get update -qq
 # build-essential is for the occasional tool or Python wheel that compiles;
 # libicu74 is what pwsh needs (WSL ships it, a minimal Ubuntu image does not).
 $SUDO apt-get install -y -qq build-essential ca-certificates curl git gpg unzip xz-utils libicu74 bubblewrap socat
+
+echo "==> Installing Chromium's system libraries (Playwright browser tests)"
+# The apps' browser tests run the Chromium Playwright downloads, which links
+# these; mise can't provide shared libraries. This is the library half of
+# Playwright 1.65's Ubuntu 24.04 chromium list (not its xvfb/fonts extras), so
+# it works before any repo's Python environment exists. WSL lacks nss, nspr
+# and alsa. Re-check it when the apps' Playwright moves a minor version
+# (`playwright install-deps --dry-run chromium`); tests/check-browser-libs.sh
+# checks the sonames.
+$SUDO apt-get install -y -qq libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 \
+  libatspi2.0-0t64 libcairo2 libcups2t64 libdbus-1-3 libdrm2 libgbm1 \
+  libglib2.0-0t64 libnspr4 libnss3 libpango-1.0-0 libx11-6 libxcb1 \
+  libxcomposite1 libxdamage1 libxext6 libxfixes3 libxkbcommon0 libxrandr2
 $SUDO install -dm 755 /etc/apt/keyrings
 CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")"
 ARCH="$(dpkg --print-architecture)"

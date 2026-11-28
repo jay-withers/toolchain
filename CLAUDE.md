@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo does
 
-Bootstrap scripts for a fresh WSL (Ubuntu 24.04) or macOS machine, built on [mise](https://mise.jdx.dev). It replaces the dev-container images for local work: the jay-withers repos are moving off dev containers, so this is how a machine gets its tools. `src/setup.sh` runs `src/linux.sh` (apt: mise, psql, bubblewrap/socat for Claude Code's sandbox, libicu for pwsh, zsh and its plugins; plus ble.sh from a pinned tarball) or `src/macos.sh` (Homebrew: mise, libpq, zsh plugins), then `src/common.sh`. That script symlinks `src/mise/config.toml` into `~/.config/mise/conf.d/`, runs `mise install`, puts mise shims on PATH and the `src/shell/` source line in the shell rc files, makes zsh the login shell, and verifies every tool.
+Bootstrap scripts for a fresh WSL (Ubuntu 24.04) or macOS machine, built on [mise](https://mise.jdx.dev). It replaces the dev-container images for local work: the jay-withers repos are moving off dev containers, so this is how a machine gets its tools. `src/setup.sh` runs `src/linux.sh` (apt: mise, psql, bubblewrap/socat for Claude Code's sandbox, libicu for pwsh, the shared libraries Playwright's Chromium links for the apps' browser tests, zsh and its plugins; plus ble.sh from a pinned tarball) or `src/macos.sh` (Homebrew: mise, libpq, zsh plugins), then `src/common.sh`. That script symlinks `src/mise/config.toml` into `~/.config/mise/conf.d/`, runs `mise install`, puts mise shims on PATH and the `src/shell/` source line in the shell rc files, makes zsh the login shell, and verifies every tool.
 
 - **Tools belong in `src/mise/config.toml`**, not in apt or the Brewfile. Use apt or Homebrew only for what mise can't manage (mise itself, psql, OS packages). Renovate's mise manager bumps the versions, except gcloud: mise's registry installs it through vfox, which that manager can't resolve, so a regex manager in `renovate.json` tracks it through the `google/cloud-sdk` image's tags.
 - **Global versus per repo:** the global config holds what every repo assumes. A tool whose version a repo's build or lint depends on also belongs in that repo's `mise.toml`, because that's what CI installs.
@@ -13,6 +13,7 @@ Bootstrap scripts for a fresh WSL (Ubuntu 24.04) or macOS machine, built on [mis
 - **Shims, not `mise activate`,** so non-interactive shells (Claude Code, make, VS Code tasks) resolve per-repo versions. Keep it that way.
 - Signing keys for the apt repos are checked against a pinned fingerprint or digest before apt trusts them.
 - **`common.sh` writes `~/.nodeenvrc`** pinning nodeenv to mise's node. pre-commit skips shims when looking for `node`, so its Node hooks (commitlint) go through nodeenv, whose unpinned "latest" can be a prerelease its version parser crashes on. Don't drop it unless pre-commit learns to use mise's node.
+- **Chromium's shared libraries come from apt in `src/linux.sh`**, as Playwright 1.65's Ubuntu 24.04 list (libraries only, no xvfb or fonts). Re-check it when the apps' Playwright moves a minor. GitHub's runner already has them, so `make test` is the real test of that install.
 - Docker is deliberately not installed (Docker Desktop's WSL integration provides it); `common.sh` only warns.
 
 ## Commands
@@ -34,5 +35,5 @@ Hooks are in `.pre-commit-config.yaml` at the repo root (pre-commit's default lo
 ## CI
 
 - **ci-pre-commit**: runs all linters on PRs to `main`
-- **ci-test-install**: runs `setup.sh` then `tests/check-prompt.sh` on both `ubuntu-24.04` and `macos-26` on PRs to `main` (only when `src/` or `tests/` files change), with `GITHUB_TOKEN` set so mise's GitHub API calls are not rate-limited
+- **ci-test-install**: runs `setup.sh` then `tests/check-prompt.sh` on both `ubuntu-24.04` and `macos-26` (plus `tests/check-browser-libs.sh` on Ubuntu) on PRs to `main` (only when `src/` or `tests/` files change), with `GITHUB_TOKEN` set so mise's GitHub API calls are not rate-limited
 - **cd-tag**: auto-creates a semver tag on every merge to `main` (default bump: patch)

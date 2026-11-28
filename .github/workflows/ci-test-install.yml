@@ -46,6 +46,9 @@ jobs:
       - name: Check the interactive prompt
         run: bash tests/check-prompt.sh
 
+      - name: Check Chromium's system libraries
+        run: bash tests/check-browser-libs.sh
+
   macos:
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
