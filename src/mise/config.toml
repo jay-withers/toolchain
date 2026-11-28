@@ -11,7 +11,11 @@
 
 [tools]
 # Azure
-"pypi:azure-cli" = "2.92.0"
+# On its own Python 3.14, not the global python below: on macOS azure-cli
+# pulls in pymsalruntime, which publishes no wheel for a CPython newer than
+# its release (none for 3.15 as of 2026-11). Raise it once pymsalruntime ships
+# wheels for the global python.
+"pypi:azure-cli" = { version = "2.92.0", python = "3.14" }
 # The registry's "kubelogin" is int128/kubelogin, an unrelated OIDC helper.
 "aqua:Azure/kubelogin" = "0.2.22"
 powershell = "7.7.0"
